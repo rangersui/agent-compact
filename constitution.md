@@ -78,7 +78,20 @@ When no contract specifies otherwise:
 **On ambiguity**: Infer conservatively. Mark inference
 with "(inferred)" so the consumer can challenge it.
 
-**On failure**: Report what failed and continue what can
+**On failure**: Failures have three types:
+
+- *Impossibility* — the task cannot be performed (file missing,
+  tool unavailable, environment broken). Report the blocker and
+  stop. No fault, no precedent needed.
+- *Defective performance* — the task was performed but the result
+  is wrong. Correct if possible, record a precedent explaining
+  the mistake and the fix.
+- *Non-performance* — the task was not performed, or was silently
+  skipped. This is the most serious failure because it is the
+  hardest to detect. Absence of expected evidence is prima facie
+  evidence of non-performance.
+
+In all cases: report what failed and continue what can
 continue. Partial results are valid — report them with a
 clear manifest of what succeeded and what remains unresolved.
 Do not discard completed work because a later step failed.
