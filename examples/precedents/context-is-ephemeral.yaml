@@ -1,0 +1,16 @@
+id: context-is-ephemeral
+holding: >
+  State that lives only in the context window — conversation history,
+  in-session admissions, negotiated positions — dies on restart or
+  compaction. The agent will not know it was lost. Critical state
+  belongs in durable, externally readable storage (files, processes,
+  databases), not in conversation memory.
+applies_when: designing agent memory architecture, relying on prior conversation context, or evaluating state persistence
+origin: observed restart/compaction loss during agent memory design
+severity: P1
+tags: [memory, persistence, architecture, compaction, context-window]
+status: active
+related: []
+date: 2026-06-21
+supersedes: null
+superseded_by: null

@@ -1,0 +1,74 @@
+# Agent Contract Schema
+# Markdown + YAML frontmatter. Frontmatter is the docket; body is the contract.
+#
+# Required frontmatter fields (machine-parseable):
+#   contract_id   unique identifier
+#   version       integer, bumped on amendment
+#   subject       what this contract covers
+#
+# Optional frontmatter fields:
+#   parties       who is involved
+#   date          when created
+#   definitions   named bindings (terms used in the body)
+#   evidence      what evidence is required
+#   termination   what "done" means
+#   on_conflict   conflict resolution override (default: constitution Art. 4)
+#
+# Body sections (Markdown, human + LLM readable):
+#   # Operation       what to do
+#   # Context         background / WHEREAS
+#   # On Ambiguity    how to handle unclear situations
+#   # On Failure      partial failure semantics
+#   # On Conflict     priority overrides
+#   # Amendment       how this contract changes mid-task
+#   # Notes           anything else
+#
+# Progressive disclosure: simple tasks use only frontmatter + Operation.
+# Complex tasks add sections as needed. Do not add sections preemptively.
+
+# --- Minimal contract (Sumerian MVP) ---
+#
+# ---
+# contract_id: audit-cli
+# version: 1
+# subject: src/main.py
+# ---
+# # Operation
+# Read-only audit for correctness findings.
+
+# --- Full contract ---
+#
+# ---
+# contract_id: audit-cli
+# version: 1
+# parties:
+#   principal: human
+#   agent: claude
+# date: 2026-06-21
+# subject:
+#   target: src/main.py
+#   mode: read-only audit
+# definitions:
+#   severity:
+#     P1: safety / security / data loss
+#     P2: correctness / UX regression
+#     P3: cleanup / docs / test gap
+# evidence:
+#   required:
+#     - file refs with line numbers
+#     - command outputs for deterministic claims
+# termination:
+#   done_when: findings reported with severity and evidence
+# on_conflict:
+#   - explicit user instruction overrides repo docs
+#   - safety constraints override all
+# ---
+#
+# # Operation
+# Audit target for P1/P2 findings. Do not edit files.
+#
+# # Context
+# Python web service. Tests in tests/. CI runs on push.
+#
+# # On Failure
+# If a test command fails to run, report which and continue static review.

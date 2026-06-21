@@ -1,0 +1,44 @@
+# Precedent Schema
+# Each precedent is a YAML file in .agent/precedents/.
+#
+# Required fields:
+#   id            unique slug (kebab-case)
+#   holding       what was decided (one sentence)
+#   applies_when  when this precedent is relevant
+#   origin        where this came from (user correction, audit, etc.)
+#
+# Optional fields:
+#   supersedes    id of precedent this replaces (null if none)
+#   severity      how important (P1/P2/P3)
+#   tags          subject tags for index matching (list of strings)
+#   status        active | superseded | disputed | accepted_risk
+#   related       ids of related precedents (citation graph)
+#   superseded_by id of precedent that replaced this one (red flag)
+#   date          when recorded
+#   evidence      what supported the decision
+#   notes         additional context
+#
+# Precedents are cited by id. When a judgment call matches
+# applies_when, the agent should check and cite the precedent
+# rather than reasoning from scratch.
+#
+# Retrieval:
+#   Small scale: agent reads INDEX.yaml, matches applies_when/tags
+#   Medium scale: script generates INDEX.yaml from precedent files
+#   Large scale: LLM semantic match over applies_when lines
+#   INDEX.yaml is Westlaw; precedent files are case reports.
+#
+# Example:
+#
+# id: context-is-ephemeral
+# holding: >
+#   State in context window dies on restart or compaction.
+#   Critical state belongs in durable storage.
+# applies_when: designing agent memory or evaluating state persistence
+# origin: observed restart/compaction loss during agent memory design
+# severity: P1
+# tags: [memory, persistence, architecture, compaction]
+# status: active
+# related: []
+# supersedes: null
+# superseded_by: null
