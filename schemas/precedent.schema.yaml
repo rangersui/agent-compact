@@ -28,6 +28,29 @@
 #   Large scale: LLM semantic match over applies_when lines
 #   INDEX.yaml is Westlaw; precedent files are case reports.
 #
+# INDEX.yaml Generation:
+#   INDEX.yaml is a generated artifact — not a source of truth.
+#   Precedent files are the source of truth.
+#   Manual edits to INDEX.yaml are forbidden.
+#
+#   Generated from: .agent/precedents/*.yaml (excluding INDEX.yaml)
+#   Generator:      python .agent/tools/index.py .agent/precedents
+#   Checker:        python .agent/tools/index.py .agent/precedents --check
+#
+#   Copied fields (deterministic order):
+#     id, holding, applies_when, tags, severity,
+#     status, date, supersedes, superseded_by
+#
+#   Sort order: alphabetical by id
+#   Format: YAML list under top-level entries: key
+#
+#   Lifecycle checks (enforced by judge):
+#     ✓ INDEX.yaml present when precedent files exist
+#     ✓ Every precedent file appears in INDEX.yaml
+#     ✓ Every INDEX entry points to an existing file
+#     ✓ Copied field values match source precedent
+#     ✗ Stale index = evidence failure / non-performance risk
+#
 # Example:
 #
 # id: context-is-ephemeral

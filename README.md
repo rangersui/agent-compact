@@ -30,8 +30,9 @@ Create an `.agent/` directory in your project and copy in
 `constitution.md`. Add subdirectories as needed:
 
 ```bash
-mkdir -p .agent/contracts .agent/precedents .agent/evidence
+mkdir -p .agent/contracts .agent/precedents .agent/evidence .agent/tools
 cp path/to/agent-compact/constitution.md .agent/
+cp path/to/agent-compact/.agent/tools/index.py .agent/tools/
 ```
 
 ```
@@ -40,6 +41,7 @@ cp path/to/agent-compact/constitution.md .agent/
   contracts/             <- task specs (Markdown + frontmatter)
   precedents/            <- accumulated decisions (YAML)
   evidence/              <- verification artifacts
+  tools/                 <- governance scripts (INDEX generator, etc.)
 ```
 
 Add one line to your system prompt or CLAUDE.md:
@@ -84,10 +86,20 @@ supersedes: null
 Pins reports to repo + commit, records scope status,
 precedents checked, and findings with evidence type.
 
-**Retrieval**: `INDEX.yaml` collects all `id`, `holding`,
-`applies_when`, and `tags` into one small file. Agent reads
-the index first, matches against the current task, then loads
-only the matching precedent files. Index first, full text second.
+**Retrieval**: `INDEX.yaml` is a **generated artifact** — precedent
+files are the source of truth. Generate or verify with:
+
+```bash
+python .agent/tools/index.py .agent/precedents          # generate
+python .agent/tools/index.py .agent/precedents --check   # verify, exit 1 if stale
+```
+
+Manual edits to INDEX.yaml are forbidden. The generator copies
+`id`, `holding`, `applies_when`, `tags`, `severity`, `status`,
+`date`, `supersedes`, `superseded_by` from each precedent file
+into one small index. Agent reads the index first, matches
+against the current task, then loads only the matching precedent
+files. Index first, full text second.
 
 **Constitution**: seven articles.
 
@@ -157,8 +169,13 @@ schemas/
   evidence.schema.yaml       evidence format reference
 examples/
   precedents/                example precedents (format reference)
-    INDEX.yaml               example index
+    INDEX.yaml               generated index (do not edit manually)
     context-is-ephemeral.yaml
+.agent/
+  tools/
+    index.py                 INDEX.yaml generator/checker
+  hooks/                     lifecycle hooks (SessionStart, PostCompact, etc.)
+  prompts/                   role briefings (executor, jury, preamble)
 ```
 
 Your project accumulates its own precedents, contracts, and

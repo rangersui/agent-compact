@@ -428,7 +428,7 @@ body {
 
 <script>
 // ── state ──
-const store = { contracts: [], evidence: [], precedents: [], hooks: [], prompts: [], constitution: null };
+const store = { contracts: [], evidence: [], precedents: [], hooks: [], prompts: [], constitution: null, indexYaml: null };
 
 // ── load from API ──
 async function loadAll() {
@@ -438,6 +438,7 @@ async function loadAll() {
   store.hooks = [];
   store.prompts = [];
   store.constitution = null;
+  store.indexYaml = null;
 
   try {
     const resp = await fetch('/api/files');
@@ -453,7 +454,9 @@ async function loadAll() {
         store.contracts.push(parsed);
       } else if (path.startsWith('evidence/') && path.endsWith('.md')) {
         store.evidence.push(parsed);
-      } else if (path.startsWith('precedents/') && path.endsWith('.yaml') && !path.endsWith('INDEX.yaml')) {
+      } else if (path === 'precedents/INDEX.yaml') {
+        store.indexYaml = parsed;
+      } else if (path.startsWith('precedents/') && path.endsWith('.yaml')) {
         store.precedents.push(parsed);
       } else if (path.startsWith('hooks/') && (path.endsWith('.py') || path.endsWith('.md'))) {
         store.hooks.push(parsed);
@@ -507,8 +510,8 @@ function parseYamlSimple(text) {
   for (const line of text.split('\n')) {
     // continuation of multiline value
     if (inMultiline) {
-      if (line.match(/^\s/) && !line.match(/^\S/)) {
-        currentVal += (currentVal ? ' ' : '') + line.trim();
+      if (line === '' || (line.match(/^\s/) && !line.match(/^\S/))) {
+        if (line.trim()) currentVal += (currentVal ? ' ' : '') + line.trim();
         continue;
       } else {
         obj[currentKey] = currentVal.trim();
@@ -543,9 +546,17 @@ function parseYamlSimple(text) {
       } else {
         obj[currentKey].push(item);
       }
-    } else if (line.match(/^\s+\w[\w_./-]*:/) && currentKey && typeof obj[currentKey] === 'object' && !Array.isArray(obj[currentKey])) {
+    } else if (line.match(/^\s+\w[\w_./-]*:/) && currentKey && typeof obj[currentKey] === 'object') {
       const nested = line.match(/^\s+(\w[\w_./-]*):\s*(.*)/);
-      if (nested) obj[currentKey][nested[1]] = nested[2].trim();
+      if (nested) {
+        if (Array.isArray(obj[currentKey])) {
+          // continuation of last list item — add field to same object
+          const last = obj[currentKey][obj[currentKey].length - 1];
+          if (last && typeof last === 'object') last[nested[1]] = nested[2].trim();
+        } else {
+          obj[currentKey][nested[1]] = nested[2].trim();
+        }
+      }
     }
   }
 
@@ -1006,6 +1017,70 @@ function checkLifecycle() {
       }
     }
   });
+
+  // ── precedent INDEX checks ──
+  if (store.precedents.length) {
+    html += '<div class="file-group">Precedent INDEX</div>';
+
+    if (!store.indexYaml) {
+      html += `<div class="lifecycle-row">
+        <span class="status-icon lifecycle-missing">✗</span>
+        <span>INDEX.yaml</span>
+        <span style="color:var(--text-dim)">missing — run: python .agent/tools/index.py .agent/precedents</span>
+      </div>`;
+    } else {
+      html += `<div class="lifecycle-row">
+        <span class="status-icon lifecycle-ok">✓</span>
+        <span>INDEX.yaml</span>
+        <span style="color:var(--text-dim)">present</span>
+      </div>`;
+
+      const indexEntries = Array.isArray(store.indexYaml.meta.entries) ? store.indexYaml.meta.entries : [];
+      const indexIds = indexEntries.map(e => e.id).filter(Boolean);
+      const precIds = store.precedents.map(p => p.meta.id || p._path.replace('precedents/', '').replace('.yaml', ''));
+
+      // every precedent file appears in INDEX?
+      precIds.forEach(pid => {
+        if (!indexIds.includes(pid)) {
+          html += `<div class="lifecycle-row">
+            <span class="status-icon lifecycle-missing">✗</span>
+            <span>Precedent <code>${escHtml(pid)}</code></span>
+            <span style="color:var(--text-dim)">missing from INDEX.yaml</span>
+          </div>`;
+        }
+      });
+
+      // every INDEX entry has a matching file?
+      indexIds.forEach(iid => {
+        if (!precIds.includes(iid)) {
+          html += `<div class="lifecycle-row">
+            <span class="status-icon lifecycle-missing">✗</span>
+            <span>INDEX entry <code>${escHtml(iid)}</code></span>
+            <span style="color:var(--text-dim)">no matching precedent file</span>
+          </div>`;
+        }
+      });
+
+      // copied fields match source?
+      const copiedFields = ['holding', 'applies_when', 'tags', 'severity', 'status', 'date', 'supersedes', 'superseded_by'];
+      store.precedents.forEach(p => {
+        const pid = p.meta.id || p._path.replace('precedents/', '').replace('.yaml', '');
+        const indexEntry = indexEntries.find(e => e.id === pid);
+        if (!indexEntry) return;
+        copiedFields.forEach(field => {
+          const srcVal = String(p.meta[field] || '');
+          const idxVal = String(indexEntry[field] || '');
+          if (srcVal !== idxVal && (srcVal || idxVal)) {
+            html += `<div class="lifecycle-row">
+              <span class="status-icon lifecycle-warn">⚠</span>
+              <span><code>${escHtml(pid)}</code> → <code>${field}</code></span>
+              <span style="color:var(--text-dim)">INDEX value differs from source</span>
+            </div>`;
+          }
+        });
+      });
+    }
+  }
 
   if (!html) html = '<div class="lifecycle-row"><span class="status-icon lifecycle-ok">✓</span> All checks pass.</div>';
 
