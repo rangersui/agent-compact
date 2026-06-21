@@ -375,6 +375,7 @@ body {
       <div class="tab active" data-tab="contracts">Contracts</div>
       <div class="tab" data-tab="evidence">Evidence</div>
       <div class="tab" data-tab="precedents">Precedents</div>
+      <div class="tab" data-tab="runtime">Runtime</div>
     </div>
     <div class="file-list" id="file-list"></div>
     <div class="status-bar" id="status-bar">No directory loaded</div>
@@ -427,13 +428,15 @@ body {
 
 <script>
 // ── state ──
-const store = { contracts: [], evidence: [], precedents: [], constitution: null };
+const store = { contracts: [], evidence: [], precedents: [], hooks: [], prompts: [], constitution: null };
 
 // ── load from API ──
 async function loadAll() {
   store.contracts = [];
   store.evidence = [];
   store.precedents = [];
+  store.hooks = [];
+  store.prompts = [];
   store.constitution = null;
 
   try {
@@ -452,6 +455,10 @@ async function loadAll() {
         store.evidence.push(parsed);
       } else if (path.startsWith('precedents/') && path.endsWith('.yaml') && !path.endsWith('INDEX.yaml')) {
         store.precedents.push(parsed);
+      } else if (path.startsWith('hooks/') && (path.endsWith('.py') || path.endsWith('.md'))) {
+        store.hooks.push(parsed);
+      } else if (path.startsWith('prompts/') && path.endsWith('.md')) {
+        store.prompts.push(parsed);
       }
     }
 
@@ -509,8 +516,8 @@ function parseYamlSimple(text) {
       }
     }
 
-    // key: value
-    const kv = line.match(/^(\w[\w_-]*):\s*(.*)/);
+    // key: value (supports path-shaped keys like hooks/session_start.py)
+    const kv = line.match(/^(\w[\w_./-]*):\s*(.*)/);
     if (kv) {
       currentKey = kv[1];
       const val = kv[2].trim();
@@ -528,7 +535,7 @@ function parseYamlSimple(text) {
       if (!Array.isArray(obj[currentKey])) obj[currentKey] = [];
       const item = line.replace(/^\s+-\s*/, '').trim();
       // check if it's a mapping
-      const ikv = item.match(/^(\w[\w_-]*):\s*(.*)/);
+      const ikv = item.match(/^(\w[\w_./-]*):\s*(.*)/);
       if (ikv) {
         const listObj = { [ikv[1]]: ikv[2] };
         // peek ahead — handled simply
@@ -536,8 +543,8 @@ function parseYamlSimple(text) {
       } else {
         obj[currentKey].push(item);
       }
-    } else if (line.match(/^\s+\w[\w_-]*:/) && currentKey && typeof obj[currentKey] === 'object' && !Array.isArray(obj[currentKey])) {
-      const nested = line.match(/^\s+(\w[\w_-]*):\s*(.*)/);
+    } else if (line.match(/^\s+\w[\w_./-]*:/) && currentKey && typeof obj[currentKey] === 'object' && !Array.isArray(obj[currentKey])) {
+      const nested = line.match(/^\s+(\w[\w_./-]*):\s*(.*)/);
       if (nested) obj[currentKey][nested[1]] = nested[2].trim();
     }
   }
@@ -571,6 +578,18 @@ function renderFileList() {
     store.evidence.forEach(e => list.innerHTML += fileItem(e, 'evidence'));
   } else if (activeTab === 'precedents') {
     store.precedents.forEach(p => list.innerHTML += fileItem(p, 'precedent'));
+  } else if (activeTab === 'runtime') {
+    if (store.hooks.length) {
+      list.innerHTML += `<div class="file-group">Hooks</div>`;
+      store.hooks.forEach(h => list.innerHTML += fileItem(h, 'hook'));
+    }
+    if (store.prompts.length) {
+      list.innerHTML += `<div class="file-group">Prompts</div>`;
+      store.prompts.forEach(p => list.innerHTML += fileItem(p, 'prompt'));
+    }
+    if (!store.hooks.length && !store.prompts.length) {
+      list.innerHTML += `<div class="file-group" style="color:var(--text-dim)">No hooks or prompts found</div>`;
+    }
   }
 
   // bind clicks
@@ -600,7 +619,7 @@ function showDoc(path) {
   document.getElementById('welcome').classList.add('hidden');
   document.getElementById('doc-view').classList.remove('hidden');
 
-  const all = [...store.contracts, ...store.evidence, ...store.precedents];
+  const all = [...store.contracts, ...store.evidence, ...store.precedents, ...store.hooks, ...store.prompts];
   if (store.constitution) all.push(store.constitution);
   const doc = all.find(d => d._path === path);
   if (!doc) return;
@@ -884,13 +903,13 @@ function checkLifecycle() {
   const results = document.getElementById('lifecycle-results');
   let html = '';
 
+  // ── contract / evidence checks ──
   const archived = store.contracts.filter(c => c._archived);
   const evidenceIds = store.evidence.map(e => e.meta.contract_id);
 
-  if (archived.length === 0 && store.evidence.length === 0) {
-    html = '<p style="color:var(--text-dim)">No archived contracts or evidence to check.</p>';
-  } else {
-    // check each archived contract has evidence
+  if (archived.length || store.evidence.length) {
+    html += '<div class="file-group">Contracts &amp; Evidence</div>';
+
     archived.forEach(c => {
       const cid = c.meta.contract_id;
       const hasEvidence = evidenceIds.includes(cid);
@@ -901,7 +920,6 @@ function checkLifecycle() {
       </div>`;
     });
 
-    // check each evidence points to a known contract
     store.evidence.forEach(e => {
       const cid = e.meta.contract_id;
       const hasContract = store.contracts.some(c => c.meta.contract_id === cid);
@@ -914,7 +932,6 @@ function checkLifecycle() {
       }
     });
 
-    // check evidence has commit pinning
     store.evidence.forEach(e => {
       const hasCommit = e.meta.commit && String(e.meta.commit).match(/^[0-9a-f]{7,40}$/);
       if (!hasCommit) {
@@ -926,8 +943,71 @@ function checkLifecycle() {
       }
     });
 
-    if (!html) html = '<div class="lifecycle-row"><span class="status-icon lifecycle-ok">✓</span> All contracts have evidence, all evidence has commit pins.</div>';
+    store.evidence.forEach(e => {
+      if (e.meta.status === 'draft') {
+        html += `<div class="lifecycle-row">
+          <span class="status-icon lifecycle-warn">⚠</span>
+          <span>Evidence <code>${escHtml(e.meta.contract_id || e._path)}</code></span>
+          <span style="color:var(--text-dim)">status: draft — commit pin pending</span>
+        </div>`;
+      }
+    });
   }
+
+  // ── runtime controls — always run ──
+  html += '<div class="file-group">Runtime Controls</div>';
+
+  const expectedHooks = ['session_start.py', 'post_compact.py', 'subagent_start.py', 'pre_edit.py', 'on_stop.py'];
+  const foundHookPaths = store.hooks.map(h => h._path);
+  const foundHookNames = store.hooks.map(h => h._path.split('/').pop());
+  expectedHooks.forEach(h => {
+    const found = foundHookNames.includes(h);
+    html += `<div class="lifecycle-row">
+      <span class="status-icon ${found ? 'lifecycle-ok' : 'lifecycle-missing'}">${found ? '✓' : '✗'}</span>
+      <span>Hook <code>${h}</code></span>
+      <span style="color:var(--text-dim)">${found ? 'present' : 'missing'}</span>
+    </div>`;
+  });
+
+  const expectedPrompts = ['preamble.md', 'executor.md', 'jury.md'];
+  const foundPromptNames = store.prompts.map(p => p._path.split('/').pop());
+  expectedPrompts.forEach(p => {
+    const found = foundPromptNames.includes(p);
+    html += `<div class="lifecycle-row">
+      <span class="status-icon ${found ? 'lifecycle-ok' : 'lifecycle-missing'}">${found ? '✓' : '✗'}</span>
+      <span>Prompt <code>${p}</code></span>
+      <span style="color:var(--text-dim)">${found ? 'present' : 'missing'}</span>
+    </div>`;
+  });
+
+  // ── evidence ↔ runtime cross-check ──
+  store.evidence.forEach(e => {
+    const hooks = e.meta.runtime_hooks || {};
+    const prompts = e.meta.runtime_prompts || {};
+    if (!Object.keys(hooks).length && !Object.keys(prompts).length) return;
+    for (const [event, path] of Object.entries(hooks)) {
+      const exists = foundHookPaths.includes(path.replace(/^\.agent\//, ''));
+      if (!exists) {
+        html += `<div class="lifecycle-row">
+          <span class="status-icon lifecycle-missing">✗</span>
+          <span>Evidence <code>${escHtml(e.meta.contract_id)}</code> declares hook ${escHtml(event)}: <code>${escHtml(path)}</code></span>
+          <span style="color:var(--text-dim)">file not found</span>
+        </div>`;
+      }
+    }
+    for (const [role, path] of Object.entries(prompts)) {
+      const exists = store.prompts.some(p => p._path === path.replace(/^\.agent\//, ''));
+      if (!exists) {
+        html += `<div class="lifecycle-row">
+          <span class="status-icon lifecycle-missing">✗</span>
+          <span>Evidence <code>${escHtml(e.meta.contract_id)}</code> declares prompt ${escHtml(role)}: <code>${escHtml(path)}</code></span>
+          <span style="color:var(--text-dim)">file not found</span>
+        </div>`;
+      }
+    }
+  });
+
+  if (!html) html = '<div class="lifecycle-row"><span class="status-icon lifecycle-ok">✓</span> All checks pass.</div>';
 
   results.innerHTML = html;
   document.getElementById('lifecycle-modal').classList.remove('hidden');

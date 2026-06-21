@@ -12,9 +12,12 @@
 #   commit_date   commit timestamp (ISO 8601)
 #
 # Optional frontmatter fields:
+#   status          "draft" if commit pin is pending, omit when final
 #   commit_message  one-line commit subject
 #   scope_status    per-file review status manifest
 #   precedents_checked  which precedents were consulted
+#   runtime_hooks       map of event → hook script path
+#   runtime_prompts     map of role → prompt file path
 #
 # Body (Markdown):
 #   # Summary          counts and overview
@@ -49,6 +52,13 @@
 # precedents_checked:
 #   - id: context-is-ephemeral
 #     matched: no
+# runtime_hooks:
+#   SessionStart: .agent/hooks/session_start.py
+#   PostCompact: .agent/hooks/post_compact.py
+#   Stop: .agent/hooks/on_stop.py
+# runtime_prompts:
+#   executor: .agent/prompts/executor.md
+#   jury: .agent/prompts/jury.md
 # ---
 #
 # # Summary

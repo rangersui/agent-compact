@@ -75,7 +75,7 @@ func main() {
 				return nil
 			}
 			ext := strings.ToLower(filepath.Ext(path))
-			if ext != ".md" && ext != ".yaml" && ext != ".yml" {
+			if ext != ".md" && ext != ".yaml" && ext != ".yml" && ext != ".py" {
 				return nil
 			}
 

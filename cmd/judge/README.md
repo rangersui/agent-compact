@@ -33,4 +33,4 @@ Read-only. Does not write to the `.agent/` directory.
 | Endpoint | Method | Response |
 |----------|--------|----------|
 | `/` | GET | Embedded HTML viewer |
-| `/api/files` | GET | JSON array of `{path, content}` for all `.md`/`.yaml`/`.yml` files |
+| `/api/files` | GET | JSON array of `{path, content}` for all `.md`/`.yaml`/`.yml`/`.py` files |
