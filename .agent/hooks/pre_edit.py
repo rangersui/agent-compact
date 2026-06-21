@@ -34,6 +34,13 @@ def main():
     except ValueError:
         return
 
+    # nuclear invalidation: writing any .agent/ file clears all read-tracking
+    # (precedent: nuclear-invalidation-on-write)
+    if target_rel.startswith(".agent/"):
+        reads_file = os.path.join(agent_dir, ".reads")
+        if os.path.isfile(reads_file):
+            os.remove(reads_file)
+
     # scan active contracts — match target: or targets: in frontmatter
     contracts_dir = os.path.join(agent_dir, "contracts")
     if not os.path.isdir(contracts_dir):

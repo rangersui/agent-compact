@@ -1,0 +1,24 @@
+id: nuclear-invalidation-on-write
+holding: >
+  When any .agent/ governance file is modified, invalidate all
+  read-tracking state (.reads), not just the modified file.
+  Cross-file dependencies between governance documents are
+  untrackable at the text level, so targeted invalidation
+  risks silent stale reads. Nuclear invalidation is consistent
+  with the post-compaction reset (both treat "maybe stale" as
+  "definitely stale").
+applies_when: implementing or reviewing cache invalidation for governance state, or deciding between targeted vs nuclear invalidation strategies
+origin: design discussion on .reads cache coherence — targeted invalidation misses cross-file dependencies (e.g. contract references constitution article that changed)
+severity: P2
+tags: [cache, invalidation, governance-coverage, reads, coherence]
+status: active
+related: [context-is-ephemeral]
+date: 2026-06-22
+supersedes: null
+superseded_by: null
+evidence: >
+  Three strategies compared: targeted (invalidate one file),
+  nuclear (invalidate all), do-nothing (stale reads). Nuclear
+  chosen because .agent/ file count is small (low cost) and
+  cross-file dependency tracking is infeasible (high risk of
+  targeted). Consistent with post-compaction full reset.

@@ -1,0 +1,25 @@
+# AUTO-GENERATED — do not edit manually.
+# Source: .agent/precedents/*.yaml (excluding INDEX.yaml)
+# Regenerate: python .agent/tools/index.py .agent/precedents
+
+entries:
+  - id: nuclear-invalidation-on-write
+    holding: When any .agent/ governance file is modified, invalidate all read-tracking state (.reads), not just the modified file. Cross-file dependencies between governance documents are untrackable at the text level, so targeted invalidation risks silent stale reads. Nuclear invalidation is consistent with the post-compaction reset (both treat "maybe stale" as "definitely stale").
+    applies_when: implementing or reviewing cache invalidation for governance state, or deciding between targeted vs nuclear invalidation strategies
+    tags: [cache, invalidation, governance-coverage, reads, coherence]
+    severity: P2
+    status: active
+    date: 2026-06-22
+    supersedes: null
+    superseded_by: null
+
+  - id: subagent-reads-not-due-diligence
+    holding: Subagent file reads do not count toward the main agent's governance coverage. Subagents are delegated workers — their reads are audit trail, not due diligence. The decision-maker (main agent) must read governance files itself or read the subagent's report. This mirrors legal practice: an associate's data room access does not substitute for the signing partner's own review.
+    applies_when: computing governance coverage, evaluating due diligence, designing read-tracking for multi-agent workflows
+    tags: [due-diligence, subagent, coverage, delegation, reads]
+    severity: P2
+    status: active
+    date: 2026-06-22
+    supersedes: null
+    superseded_by: null
+

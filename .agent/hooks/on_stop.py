@@ -44,14 +44,57 @@ def main():
 
     missing = [c for c in active if c not in evidence_ids]
 
+    # governance coverage — what .agent/ files did the main agent actually read?
+    # only "main" lines count toward due diligence; subagent lines are audit trail
+    main_reads = set()
+    sub_reads = set()
+    reads_file = os.path.join(agent_dir, ".reads")
+    if os.path.isfile(reads_file):
+        with open(reads_file, encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                if "\t" in line:
+                    who, path = line.split("\t", 1)
+                    if who == "main":
+                        main_reads.add(path)
+                    else:
+                        sub_reads.add(path)
+                else:
+                    # legacy format (no who prefix) — treat as main
+                    main_reads.add(line)
+
+    expected = set()
+    expected.add(".agent/constitution.md")
+    for c in active:
+        for f in sorted(glob.glob(os.path.join(contracts_dir, "*.md"))):
+            expected.add(".agent/contracts/" + os.path.basename(f))
+
+    covered = expected & main_reads
+    uncovered = expected - main_reads
+
+    parts = []
+
     if missing:
-        msg = (
-            f"[agent-compact] {len(missing)} active contract(s) have no evidence: "
+        parts.append(
+            f"{len(missing)} active contract(s) have no evidence: "
             f"{', '.join(missing)}. "
             "Per Article 3, claims require evidence. "
             "Per Article 4, absence of expected evidence is prima facie evidence of non-performance."
         )
-        json.dump({"systemMessage": msg}, sys.stdout)
+
+    if uncovered:
+        detail = f"GOVERNANCE COVERAGE: {len(covered)}/{len(expected)}. "
+        detail += f"Unread: {', '.join(sorted(uncovered))}"
+        # flag if subagent read something the main agent didn't
+        delegated = uncovered & sub_reads
+        if delegated:
+            detail += f". Note: {len(delegated)} read by subagent only (does not count — read the report, not the delegation)"
+        parts.append(detail)
+
+    if parts:
+        json.dump({"systemMessage": "[agent-compact] " + " | ".join(parts)}, sys.stdout)
 
 if __name__ == "__main__":
     main()

@@ -968,7 +968,7 @@ function checkLifecycle() {
   // ── runtime controls — always run ──
   html += '<div class="file-group">Runtime Controls</div>';
 
-  const expectedHooks = ['session_start.py', 'post_compact.py', 'subagent_start.py', 'pre_edit.py', 'on_stop.py'];
+  const expectedHooks = ['session_start.py', 'post_compact.py', 'subagent_start.py', 'pre_edit.py', 'post_read.py', 'on_stop.py'];
   const foundHookPaths = store.hooks.map(h => h._path);
   const foundHookNames = store.hooks.map(h => h._path.split('/').pop());
   expectedHooks.forEach(h => {

@@ -89,6 +89,11 @@ def main():
         if missing:
             parts.append(f"[EVIDENCE GAP] {', '.join(missing)} — no evidence yet")
 
+    # reset governance coverage — agent no longer has prior reads in context
+    reads_file = os.path.join(agent_dir, ".reads")
+    if os.path.isfile(reads_file):
+        os.remove(reads_file)
+
     if parts:
         msg = (
             "[Post-compaction context restore] "

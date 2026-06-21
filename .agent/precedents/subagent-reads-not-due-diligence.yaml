@@ -1,0 +1,27 @@
+id: subagent-reads-not-due-diligence
+holding: >
+  Subagent file reads do not count toward the main agent's
+  governance coverage. Subagents are delegated workers — their
+  reads are audit trail, not due diligence. The decision-maker
+  (main agent) must read governance files itself or read the
+  subagent's report. This mirrors legal practice: an associate's
+  data room access does not substitute for the signing partner's
+  own review.
+applies_when: computing governance coverage, evaluating due diligence, designing read-tracking for multi-agent workflows
+origin: >
+  design discussion on .reads identity tracking — the normal
+  operating model is one main agent supervising many subagents,
+  not many parallel main agents. Subagent context dies when it
+  returns, so its "reading" produces no durable understanding
+  in the decision-maker.
+severity: P2
+tags: [due-diligence, subagent, coverage, delegation, reads]
+status: active
+related: [nuclear-invalidation-on-write, context-is-ephemeral]
+date: 2026-06-22
+supersedes: null
+superseded_by: null
+evidence: >
+  .reads format uses who-prefix (main vs sub:id) per line.
+  on_stop.py coverage calculation filters to main-only.
+  Subagent-only reads flagged in report but not counted.

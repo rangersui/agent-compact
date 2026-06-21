@@ -10,7 +10,8 @@ Claude Code hooks that inject `.agent/` context automatically.
 | `post_compact.py` | PostCompact | Re-injects context after compaction — includes contract targets and evidence gaps |
 | `subagent_start.py` | SubagentStart | Injects governance rules + active contracts into every subagent |
 | `pre_edit.py` | PreToolUse (Edit\|Write) | Warns when editing a file covered by an active contract |
-| `on_stop.py` | Stop | Warns if active contracts have no evidence files |
+| `post_read.py` | PostToolUse (Read) | Tracks .agent/ file reads for governance coverage |
+| `on_stop.py` | Stop | Reports evidence gaps + governance coverage |
 
 `post_compact.py` and `subagent_start.py` are the most critical hooks.
 Compaction wipes all prior injection. Subagents spawn with zero context.
@@ -83,6 +84,17 @@ Add to your project's `.claude/settings.json`:
           {
             "type": "command",
             "command": "python .agent/hooks/pre_edit.py"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python .agent/hooks/post_read.py"
           }
         ]
       }

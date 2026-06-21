@@ -2,3 +2,4 @@ cmd/judge/judge
 cmd/judge/judge.exe
 cmd/judge/judge.exe~
 *~
+.agent/.reads
