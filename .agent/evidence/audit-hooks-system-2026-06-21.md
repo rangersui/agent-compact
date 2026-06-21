@@ -2,13 +2,12 @@
 contract_id: audit-hooks-system
 version: 1
 type: evidence
-status: draft
 date: 2026-06-21
 repo: https://github.com/rangersui/agent-compact
-commit: pending — hooks/, prompts/, .agent/ are untracked at time of writing
-commit_short: pending
-commit_date: pending
-commit_message: pending
+commit: 541dcf110c41d766c046ab509c850a00aef36696
+commit_short: 541dcf1
+commit_date: 2026-06-22T00:13:46+10:00
+commit_message: add hooks, prompts, and runtime governance system
 scope_status:
   hooks/session_start.py: audited
   hooks/post_compact.py: audited
@@ -121,6 +120,6 @@ constitution text into its systemMessage.
 
 ## Termination
 
-Draft: all 6 evidence checks executed. Commit pin pending — evidence
-cannot be finalized until hooks/, prompts/, and this file are committed.
-Re-pin and remove draft status after commit.
+Contract satisfied: all 6 evidence requirements produced with
+deterministic verification. 3 rounds of independent jury review,
+final round returned 0 findings. Evidence pinned to commit 541dcf1.
