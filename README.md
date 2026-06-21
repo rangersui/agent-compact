@@ -80,6 +80,10 @@ status: active
 supersedes: null
 ```
 
+**Evidence**: Markdown + YAML frontmatter.
+Pins reports to repo + commit, records scope status,
+precedents checked, and findings with evidence type.
+
 **Retrieval**: `INDEX.yaml` collects all `id`, `holding`,
 `applies_when`, and `tags` into one small file. Agent reads
 the index first, matches against the current task, then loads
@@ -150,6 +154,7 @@ constitution.md              the seven articles
 schemas/
   contract.schema.yaml       contract format reference
   precedent.schema.yaml      precedent format reference
+  evidence.schema.yaml       evidence format reference
 examples/
   precedents/                example precedents (format reference)
     INDEX.yaml               example index

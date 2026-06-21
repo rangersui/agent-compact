@@ -1,0 +1,60 @@
+# Evidence Schema
+# Markdown + YAML frontmatter. Frontmatter is the docket; body is the findings.
+#
+# Required frontmatter fields:
+#   contract_id   which contract this evidence supports
+#   version       contract version being evidenced
+#   type          "evidence"
+#   date          when produced
+#   repo          repository URL
+#   commit        full commit SHA
+#   commit_short  short SHA (for display)
+#   commit_date   commit timestamp (ISO 8601)
+#
+# Optional frontmatter fields:
+#   commit_message  one-line commit subject
+#   scope_status    per-file review status manifest
+#   precedents_checked  which precedents were consulted
+#
+# Body (Markdown):
+#   # Summary          counts and overview
+#   # P1/P2/P3 Findings  grouped by severity
+#   # Precedent Applications  how cited precedents affected findings
+#   # Unresolved Items  what was not completed
+#
+# Every finding must include:
+#   - file path and line number(s)
+#   - evidence type (deterministic / analytical / subjective)
+#   - description of the issue
+#
+# Commit pinning is mandatory. Evidence without a commit SHA
+# is untraceable — you cannot verify findings against the code
+# that was actually reviewed. See precedent: audit-pin-to-commit.
+
+# --- Example ---
+#
+# ---
+# contract_id: audit-cli
+# version: 1
+# type: evidence
+# date: 2026-06-21
+# repo: https://github.com/example/project
+# commit: a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2
+# commit_short: a1b2c3d
+# commit_date: 2026-06-21T12:00:00+00:00
+# commit_message: fix auth bypass
+# scope_status:
+#   src/main.py: reviewed — findings below
+#   src/utils.py: reviewed — no findings
+# precedents_checked:
+#   - id: context-is-ephemeral
+#     matched: no
+# ---
+#
+# # Summary
+# 2 files reviewed. 0 P1, 1 P2, 0 P3.
+#
+# ## P2-1. Unchecked return value
+# File: src/main.py:42
+# Evidence type: analytical
+# ...
