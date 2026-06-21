@@ -1,6 +1,6 @@
 ---
 contract_id: audit-hooks-system
-version: 1
+version: 2
 parties:
   principal: human
   agent: claude
@@ -34,6 +34,7 @@ Scope:
 - hooks/post_compact.py
 - hooks/subagent_start.py
 - hooks/pre_edit.py
+- hooks/post_read.py
 - hooks/on_stop.py
 - prompts/preamble.md
 - prompts/executor.md
